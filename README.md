@@ -21,6 +21,7 @@ The overall goal of this project is to provide automation around DT Permissionin
     + Feature: Set user group permissions, based on group type, the default permissions for a user group and list of tenants that a user should have access to.
     + Feature: Verify user group permissions
     + Feature: Allow users to verify if a group exists in dynatrace 
+    + Task: Research and Develop features for Settings 2.0
 + The following should/could be added: 
     + Interface: fastAPI or otherwise
     + Mongo Datbase for storing information regarding valid tenants, valid permissions and default permission for both Dynatrace User Groups
