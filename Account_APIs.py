@@ -121,7 +121,7 @@ class DTAccount:
             TODO: Set the permission data Dynamically 
             data=  {
                     "permissionName": "tenant-viewer",
-                    "scope": "ttd65978",
+                    "scope": "***",
                     "scopeType": "tenant"
                 }
 
