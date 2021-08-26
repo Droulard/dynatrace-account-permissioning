@@ -12,7 +12,7 @@ class DTAccount:
     def __repr__(self):
         return f"DT Account: {self._account_num}"
 
-    def _bearerToken(self, scope=None):   
+    def _bearer_token(self, scope=None):   
         """
         Purpose: Grab the bearer token with read and write permissions for the given account
         Inputs: Requires account number, client id and client secret
@@ -45,8 +45,17 @@ class DTAccount:
             raise RuntimeError("Failed to fetch groups")
         
         return bearer_token
+    
+    def _set_groups(self):
+        """
+        Purpose: Lazy load for DT groups
+        Inputs:  None
+        Return:  None
+        """ 
+        if self._groups is None:
+            self._groups = self.get_groups()
 
-    def _getGroups(self):
+    def get_groups(self):
         """
         Purpose: Grab the created groups for the given account
         Inputs: Requires account number, and bearer token
@@ -54,7 +63,7 @@ class DTAccount:
 
         """ 
         URL = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups"
-        bearer_token = self._bearerToken()
+        bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
 
         res = requests.get(URL, headers=self._headers)
@@ -68,17 +77,8 @@ class DTAccount:
             raise RuntimeError("Failed to fetch groups")
         
         return groups
-    
-    def _setGroups(self):
-        """
-        Purpose: Lazy load for DT groups
-        Inputs:  None
-        Return:  None
-        """ 
-        if self._groups is None:
-            self._groups = self._getGroups()
 
-    def _getGroupPermission(self, group_id):
+    def get_group_permission(self, group_id):
         """
         Purpose: Get permissions for a group by using the Group ID
         Inputs:  group id
@@ -86,7 +86,7 @@ class DTAccount:
         """ 
 
         url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions"
-        bearer_token = self._bearerToken()
+        bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
         res = requests.get(url, headers=self._headers)
         
@@ -98,9 +98,9 @@ class DTAccount:
         
         return permissions
 
-    def _setGroupPermission(self, **groupinfo):
+    def set_group_permission(self, **groupinfo):
         """
-        Purpose: Lazy load for DT groups
+        Purpose: Set the permissions for a given group
         Inputs:  Dictionary containing the following:
                     * Group Type
                     * Group ID
@@ -111,7 +111,7 @@ class DTAccount:
         Template: 
 
             url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions"
-            bearer_token=self._bearerToken("write")
+            bearer_token=self._bearer_token("write")
             headers = {
                 "accept": "*/*",
                 "Authorization": f"Bearer {bearer_token}",
@@ -136,14 +136,14 @@ class DTAccount:
         print("Feature Not Implemented Yet!")
         return None
         
-    def _getvalid_permissions(self):
+    def getvalid_permissions(self):
         """
         Purpose: Get valid permissions for a Dynatrace Account
         Inputs:  None
         Return:  Valid Permission Set
         """ 
         url="https://api.dynatrace.com/ref/v1/account/permissions"
-        bearer_token = self._bearerToken()
+        bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
         res = requests.get(url, headers=self._headers)
         if res:
@@ -153,7 +153,7 @@ class DTAccount:
             raise RuntimeError("Failed to fetch permissions")
         return permissions
 
-    def _getTenants(self):
+    def get_tenants(self):
         """
         Purpose: Get valid tenants for a Dynatrace Account
         Inputs:  None
@@ -161,7 +161,7 @@ class DTAccount:
         TODO: Seperate tenants and management zones, method should only return valid tenants
         """ 
         url = f"https://api.dynatrace.com/env/v1/accounts/{self._account_num}/environments"
-        bearer_token = self._bearerToken()
+        bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
         res = requests.get(url, headers=self._headers)
         if res:
@@ -178,12 +178,12 @@ class DTAccount:
         Inputs:  The name of a given group, also defined as an application team 
         Return:  array of two dictionaries, first is the permission set of the power users second is the permission set for the base users 
         """ 
-        self._setGroups()
+        self._set_groups()
         group_names = [f"Dynatrace_{group_name}_PowerUsers", f"Dynatrace_{group_name}_Users"]
         permissions = []
         for name in group_names:
             group_id = self._groups[name]['uuid']
-            permissions.append(self._getGroupPermission(group_id))
+            permissions.append(self.get_group_permission(group_id))
         return permissions
 
     def set_permissions(self, group_name):
