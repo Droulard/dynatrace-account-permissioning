@@ -11,6 +11,7 @@ if __name__ == "__main__":
     my_account = DTAccount(account_num, client_id, client_secret)
     print(my_account)
 
+
     team_name = input("Enter a team name: ")
     for group in my_account.get_permissions(team_name):
         print(f"group_name: {group['name']}")
