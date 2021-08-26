@@ -24,4 +24,4 @@ The overall goal of this project is to provide automation around DT Permissionin
     + Task: Research and Develop features for Settings 2.0
 + The following should/could be added: 
     + Interface: fastAPI or otherwise
-    + Mongo Datbase for storing information regarding valid tenants, valid permissions and default permission for both Dynatrace User Groups
+    + Mongo Database for storing information regarding valid tenants, valid permissions and default permission for both Dynatrace User Groups
