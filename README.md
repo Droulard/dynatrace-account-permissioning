@@ -1,5 +1,5 @@
 # DT-Account-Permissioning
-[![Quality gate]](./image/quality_gate.png)
+![Quality gate](./image/quality_gate.png?raw=true)
 A python module for managing user access to Dynatrace
 
 ## Requires:
