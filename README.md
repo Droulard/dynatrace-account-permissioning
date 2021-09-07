@@ -1,5 +1,5 @@
 # DT-Account-Permissioning
-[![Quality gate](http://localhost:9000/api/project_badges/quality_gate?project=dt-acc-manage)](http://localhost:9000/dashboard?id=dt-acc-manage)
+[![Quality gate]](./image/quality_gate.png)
 A python module for managing user access to Dynatrace
 
 ## Requires:
