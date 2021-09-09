@@ -3,12 +3,14 @@ from requests.api import delete
 
 class DTAccount:
     _headers = {'accept': 'application/json', 'Authorization': ""}
+    _permissions_file = "default_permissions.json"
 
     def __init__(self, acc_num, client_id, client_sec):
         self._account_num    = acc_num
         self._client_id      = client_id
         self._client_sec     = client_sec
         self._groups         = None
+        self._defaults       = None
 
     def __repr__(self):
         return f"DT Account: {self._account_num}"
@@ -40,167 +42,36 @@ class DTAccount:
 
         res = requests.post(URL, data=data, headers=headers)
         if res:
-            print("success")
             bearer_token= res.json()['access_token']
         else:
             raise RuntimeError("Failed to fetch groups")
         
         return bearer_token
-    
-    def get_groups(self):
-        """
-        Purpose: Grab the created groups for the given account
-        Inputs: None
-        Runtime Error if the api call fails
-
-        """ 
-        URL = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups"
-        bearer_token = self._bearer_token()
-        self._headers['Authorization'] = f"Bearer {bearer_token}"
-
-        res = requests.get(URL, headers=self._headers)
-        groups = dict()
-        if res:
-            print("Grabbing groups: success")
-            for group in res.json()['items']:
-                groups[group['name']]=group
-
-        else:
-            raise RuntimeError("Failed to fetch groups")
-        
-        return groups
 
     def _set_groups(self):
         """
-        Purpose: Lazy load for DT groups
-        Inputs:  None
-        Return:  None
+        Purpose: Set account groups locally
+        Inputs: None
+        Runtime Error if the api call fails
+        TODO: Store groups and only pull groups if group dosenot exist
         """ 
         if self._groups is None:
-            self._groups = self.get_groups()
+            URL = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups"
+            bearer_token = self._bearer_token()
+            self._headers['Authorization'] = f"Bearer {bearer_token}"
 
-    def get_group_permission(self, group_id):
-        """
-        Purpose: Get permissions for a group by using the Group ID
-        Inputs:  group id
-        Return:  permission set for a group id in the form of a dictionary
-        """ 
+            res = requests.get(URL, headers=self._headers)
+            groups = dict()
+            if res:
+                for group in res.json()['items']:
+                    groups[group['name']]=group
 
-        url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions"
-        bearer_token = self._bearer_token()
-        self._headers['Authorization'] = f"Bearer {bearer_token}"
-        res = requests.get(url, headers=self._headers)
+            else:
+                raise RuntimeError("Failed to fetch groups")
         
-        if res:
-            print("Obtaining Permissions: successful")
-            permissions = res.json()
-        else:
-            raise RuntimeError("Failed to fetch group permissions")
-        
-        return permissions
+            self._groups = groups
 
-    def delete_group_permission(self, groupinfo):
-        """
-        Input Dictionary with the following keys: 'group_type', 'group_name', 'tenant', 'permission'
-            Example: 
-                groupinfo={
-                    'group_type': 'Users',
-                    'group_name': '***', 
-                    'tenant': '***', 
-                    'permission': 'tenant-viewer'
-                }
-                
-        TODO: Clean up this function
-        TODO: Return boolean based on response
-        """
-        self._set_groups()
-
-        req_params = ['group_type', 'group_name', 'tenant', 'permission']
-        user_groups=["PowerUsers", "Users"]
-
-        if list(groupinfo.keys()) != req_params:
-            raise TypeError("Delete Permissions Requires a dictionary with the following keys")
-
-        if groupinfo['group_type'] in user_groups:
-            group_name = f"Dynatrace_{groupinfo['group_name']}_{groupinfo['group_type']}"        
-        else: 
-            raise TypeError("User Group Must be one of PowerUsers, Users")
-
-        try:
-            group_id = self._groups[group_name]['uuid']
-        except KeyError:
-            raise KeyError("Group does not exist!")
-
-        url = f'https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions'
-        bearer_token = self._bearer_token('write')
-        
-        params = {
-            "scope": groupinfo['tenant'],
-            "permission-name": groupinfo['permission'],
-            "scope-type": "tenant"
-        }
-        headers = {
-            'accept': '*/*',
-            'Authorization': f'Bearer {bearer_token}'
-        }
-
-        res = requests.delete(url=url, params=params, headers=headers)
-
-        if res:
-            print("Successfully deleted permission")
-        else:
-            print(res.request.body)
-            print(res.request.url)
-            print(res.json())
-            raise RuntimeError("Failed to delete permission")
-
-    def set_group_permission(self, groupinfo):
-        """
-        Purpose: Set the permissions for a given group
-        Inputs:  Dictionary containing the following:
-                    * Group Type
-                    * Group ID
-                    * Tenant List: Array of tenants that the user needs permissions too
-        Return:  Boolean based off of API response
-        TODO: Clean up this function
-        TODO: Return boolean based on response
-        """
-        self._set_groups()
-        user_groups=["PowerUsers", "Users"]
-
-        if groupinfo['group_type'] in user_groups:
-            group_name = f"Dynatrace_{groupinfo['group_name']}_{groupinfo['group_type']}"        
-        else: 
-            raise TypeError("User Group Must be one of PowerUsers, Users")
-        
-        try:
-            group_id = self._groups[group_name]['uuid']
-        except KeyError:
-            raise KeyError("Group does not exist!")
-
-        url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions"
-        bearer_token=self._bearer_token("write")
-        headers = {
-            "accept": "*/*",
-            "Authorization": f"Bearer {bearer_token}",
-            "Content-Type": "application/json"
-        }
-        data=[{
-            "permissionName": groupinfo['permission'],
-            "scope": groupinfo['tenant'],
-            "scopeType": "tenant"
-        }]
-        res= requests.post(url, headers=headers, data=json.dumps(data))
-        if res: 
-            print("Set Permissions: Successful")
-        else:
-            print(res.request.body)
-            print(res.request.headers)
-            print(res.request.url)
-            print(res.json())
-            raise RuntimeError("Failed to Set Permissions")
-        
-    def getvalid_permissions(self):
+    def _getvalid_permissions(self):
         """
         Purpose: Get valid permissions for a Dynatrace Account
         Inputs:  None
@@ -215,9 +86,10 @@ class DTAccount:
             permissions = res.json()
         else:
             raise RuntimeError("Failed to fetch permissions")
+
         return permissions
 
-    def get_tenants(self):
+    def _get_tenants(self):
         """
         Purpose: Get valid tenants for a Dynatrace Account
         Inputs:  None
@@ -235,7 +107,138 @@ class DTAccount:
             raise RuntimeError("Failed to fetch tenants")
  
         return tenants
-    
+
+    def _load_defaults(self):
+        if self._defaults == None:
+            with open (self._permissions_file) as permission_file:
+                self._defaults = json.load(permission_file)
+        
+    def group_exists(self, name):
+        exists = False
+        
+        if name in self._groups.keys():
+            exists = True
+        
+        return exists
+
+    def get_group_info(self, group_id):
+        """
+        Purpose: Get permissions for a group by using the Group ID
+        Inputs:  group id
+        Return:  permission set for a group id in the form of a dictionary
+        """ 
+
+        url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{group_id}/permissions"
+        bearer_token = self._bearer_token()
+        self._headers['Authorization'] = f"Bearer {bearer_token}"
+        res = requests.get(url, headers=self._headers)
+        
+        if res:
+            permissions = res.json()
+        else:
+            raise RuntimeError("Failed to fetch group permissions")
+        
+        return permissions
+
+    def delete_group_permission(self, groupinfo, silent=False):
+        """
+        Purpose: Used for deleting a permission for a specific tenant for a specific group
+        Input:  Dictionary with the following keys: 'group_id', 'tenant', 'permission', Boolean value to run function in silence
+            Example: 
+                groupinfo={
+                    'group_id': '***', 
+                    'tenant': '***', 
+                    'permission': 'tenant-viewer'
+                }
+
+            
+        Return: True/False based on output for deleting group permissions
+        """
+        self._set_groups()
+        bearer_token = self._bearer_token('write')
+        output = False
+        req_params = ['group_id', 'tenant', 'permission']
+
+        if list(groupinfo.keys()) != req_params:
+            print(req_params)
+            raise TypeError("Delete Permissions Requires a dictionary with the keys listed")
+
+        url = f'https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{groupinfo["group_id"]}/permissions'
+        
+        
+        params = {
+            "scope": groupinfo['tenant'],
+            "permission-name": groupinfo['permission'],
+            "scope-type": "tenant"
+        }
+        headers = {
+            'accept': '*/*',
+            'Authorization': f'Bearer {bearer_token}'
+        }
+
+        res = requests.delete(url=url, params=params, headers=headers)
+
+        if res:
+            if silent != True:
+                print("Successfully deleted permission")
+            output = True
+        else:
+            if silent != True:
+                print("Failed to delete permission")
+            
+        return output
+
+    def set_group_permission(self, groupinfo, silent=False):
+        """
+        Purpose: Set the permissions for a given group and tenant
+        Inputs:  Dictionary containing the following:
+            Example: 
+                groupinfo={
+                    'group_id': '***', 
+                    'tenant': '***', 
+                    'permissions': ['tenant-viewer']
+                }
+
+        Return: True/False based on output for setting group permissions 
+        """
+
+        self._set_groups()
+        bearer_token=self._bearer_token("write")
+        output = False
+
+        req_params = ['group_id', 'tenant', 'permissions']
+
+        if list(groupinfo.keys()) != req_params:
+            print(req_params)
+            raise TypeError("Set Permissions Requires a dictionary with the keys listed")
+
+        url = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{groupinfo['group_id']}/permissions"
+        
+        headers = {
+            "accept": "*/*",
+            "Authorization": f"Bearer {bearer_token}",
+            "Content-Type": "application/json"
+        }
+        
+        data=[]
+        for permission in groupinfo['permissions']:
+            data.append({
+                "permissionName": permission,
+                "scope": groupinfo['tenant'],
+                "scopeType": "tenant"
+            })
+        
+        res= requests.post(url, headers=headers, data=json.dumps(data))
+        if res: 
+            if silent != True:
+                print("Set Permissions: Successful")
+            output = True
+        else:
+            if silent != True:
+                print("Call failed!")
+        
+        return output
+            
     def get_permissions(self, group_name):
         """
         Purpose: Get permissions set for both the Power User and Base User groups of a given group
@@ -244,15 +247,72 @@ class DTAccount:
         """ 
         self._set_groups()
         group_names = [f"Dynatrace_{group_name}_PowerUsers", f"Dynatrace_{group_name}_Users"]
+        output = None
+        
         permissions = []
-        for name in group_names:
-            group_id = self._groups[name]['uuid']
-            permissions.append(self.get_group_permission(group_id))
-        return permissions
 
-    def set_permissions(self, group_name):
+        for name in group_names:
+            if self.group_exists(name):
+                group_id = self._groups[name]['uuid']
+                permissions.append(self.get_group_info(group_id))
+        
+        if len(permissions) !=0:
+            print("Obtaining Permissions Successful")
+            output = permissions
+    
+        return output
+
+    def set_default_permissions(self, group_name):
         """
-        TODO: Implement this feature for setting permissions for a group
+        TODO: document this feature
         """
-        print("Feature Not Implemented Yet!")
-        return None
+        self._set_groups()
+        self._load_defaults()
+        group_names = [f"Dynatrace_{group_name}_PowerUsers", f"Dynatrace_{group_name}_Users"]
+
+        
+        for tenant in self._defaults['tenants']:
+            for name in group_names:
+                permissions = self._defaults[name.split('_')[-1]]['permissions']
+                print(f"Setting permissions for {name}:")
+                if self.group_exists(name):
+                    group_info={
+                        'group_id': self._groups[name]['uuid'],
+                        'tenant': tenant,
+                        'permissions': permissions
+
+                    }
+                    res = self.set_group_permission(group_info, True)
+                    if res: 
+                        print(f"\tSet {permissions} for tenant {tenant}")
+                else:
+                    print(f"Unknown Group: {name}")
+                    raise RuntimeError("Encountered An Unknown Group!")
+
+    def clear_permissions(self, group_name, user_type):
+        """
+        TODO: document this feature
+        """
+        self._set_groups()
+        self._load_defaults()
+        if user_type in ["PowerUsers", "Users"]:
+            group_name = f"Dynatrace_{group_name}_{user_type}"
+        else:
+            raise KeyError("Incorrect User Type")
+
+        if self.group_exists(group_name):    
+            group_id = self._groups[group_name]['uuid']
+            permissions = self.get_group_info(group_id)['permissions']
+        
+            if len(permissions) > 0:
+                print(f"Removing Permssions for {group_name}:")
+                for permission in permissions:
+                    res = self.delete_group_permission({'group_id': group_id, 'tenant': permission['scope'], 'permission':permission['permissionName']}, True)
+                    if res:
+                        print(f"\tSUCCESSFUL: {permission['permissionName']} removed for tenant: {permission['scope']}")
+                    else: 
+                        print(f"\tFAILED: {permission['permissionName']} could not be removed for tenant: {permission['scope']}")       
+            else:
+                print("Nothing To Remove")
+        else: 
+            print("Group Does Not Exist")

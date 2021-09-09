@@ -1,0 +1,29 @@
+{
+    "tenants":[
+        "Tenant-Name"
+    ],
+
+    "Users": { 
+        "permissions": [
+            "tenant-viewer",
+            "tenant-manage-support-tickets",
+            "tenant-logviewer",
+            "tenant-replay-sessions-with-masking"
+        ]
+    },
+
+    "PowerUsers": { 
+        "permissions": [
+            "tenant-viewer",
+            "tenant-manage-settings",
+            "tenant-replay-sessions-with-masking",
+            "tenant-manage-support-tickets",
+            "tenant-replay-sessions-without-masking",
+            "tenant-logviewer",
+            "tenant-view-sensitive-request-data",
+            "tenant-agent-install",
+            "tenant-configure-request-capture-data"
+        ]
+    }
+
+}
