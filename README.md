@@ -8,7 +8,7 @@
 
 The overall goal of this project is to provide automation around DT Permissions so that when a team is added to Dynatrace, permissions can be set automatically based on the group type and the Dynatrace tenants a user should have access to. 
 
-###Note: project makes use of the concept of Power Users and Base Users which each have a different default set of permissions
+### Note: project makes use of the concept of Power Users and Base Users which each have a different default set of permissions
 
 ## Requires:
 + Dynatrace Account
