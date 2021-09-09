@@ -4,10 +4,9 @@ from Account_APIs import DTAccount
 
 def get_permissions(account, group_name=None):
     if group_name == None:
-        team_name = input("Enter a team name: ")
-    else:
-        team_name = group_name
-    groups = account.get_permissions(team_name)
+        group_name = input("Enter a team name: ")
+    
+    groups = account.get_permissions(group_name)
     if groups != None:
         for group in groups:
             print(f"group_name: {group['name']}")
@@ -16,23 +15,11 @@ def get_permissions(account, group_name=None):
     else:
         print("Team haa not been added")
 
-def test_case1():
-    get_permissions(my_account, '***')
-
-    groupinfo={
-                    'group_type': 'Users',
-                    'group_name': '***', 
-                    'tenant': '***', 
-                    'permission': '***'
-                }
-    print("Deleting the permission")
-    input("Hit enter to continue")
-    my_account.delete_group_permission(groupinfo)
-    get_permissions(my_account, '***')
-    print("Setting the permission")
-    input("Hit enter to continue")
-    my_account.set_group_permission(groupinfo)
-    get_permissions(my_account, '***')
+def set_permissions(account, group_name=None):
+    if group_name == None:
+        group_name = input("Enter a team name: ")
+    
+    account.set_default_permissions(group_name)
 
 
 if __name__ == "__main__":
@@ -43,10 +30,15 @@ if __name__ == "__main__":
     client_secret= os.getenv("client_secret")
     my_account = DTAccount(account_num, client_id, client_secret)
     print(my_account)
-    # my_account.set_default_permissions('test-kyle-01')
-    # get_permissions(my_account, 'test-kyle-01')
-    my_account.clear_permissions('test-kyle-01',"PowerUsers")
-    get_permissions(my_account, 'test-kyle-01')
 
 
-
+    while True:
+        commands={"set_perms": set_permissions, "get_perms": get_permissions}
+        print(f"Available Commands: {commands.keys()}, exit")
+        command = input("Enter a command: ")
+        if command == 'exit':
+            break
+        elif command in commands:
+            commands[command](my_account)
+        else:
+            print("Invalid Command")
