@@ -41,35 +41,13 @@ class DTAccount:
             data ["scope"]= "account-idm-read"
 
         res = requests.post(URL, data=data, headers=headers)
+        
         if res:
             bearer_token= res.json()['access_token']
         else:
-            raise RuntimeError("Failed to fetch groups")
+            raise RuntimeError("Failed to fetch token")
         
         return bearer_token
-
-    def _set_groups(self):
-        """
-        Purpose: Set account groups locally
-        Inputs: None
-        Runtime Error if the api call fails
-        TODO: Store groups and only pull groups if group dosenot exist
-        """ 
-        if self._groups is None:
-            URL = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups"
-            bearer_token = self._bearer_token()
-            self._headers['Authorization'] = f"Bearer {bearer_token}"
-
-            res = requests.get(URL, headers=self._headers)
-            groups = dict()
-            if res:
-                for group in res.json()['items']:
-                    groups[group['name']]=group
-
-            else:
-                raise RuntimeError("Failed to fetch groups")
-        
-            self._groups = groups
 
     def _getvalid_permissions(self):
         """
@@ -81,6 +59,7 @@ class DTAccount:
         bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
         res = requests.get(url, headers=self._headers)
+        
         if res:
             print("Obtaining Permission Sets: successful")
             permissions = res.json()
@@ -94,12 +73,13 @@ class DTAccount:
         Purpose: Get valid tenants for a Dynatrace Account
         Inputs:  None
         Return:  Valid tenant set and management zones for the tenant
-        TODO: Seperate tenants and management zones, method should only return valid tenants
+        TODO:    Separate tenants and management zones, method should only return valid tenants
         """ 
         url = f"https://api.dynatrace.com/env/v1/accounts/{self._account_num}/environments"
         bearer_token = self._bearer_token()
         self._headers['Authorization'] = f"Bearer {bearer_token}"
         res = requests.get(url, headers=self._headers)
+        
         if res:
             print("Obtaining Tenants: successful")
             tenants = res.json()
@@ -112,16 +92,43 @@ class DTAccount:
         if self._defaults == None:
             with open (self._permissions_file) as permission_file:
                 self._defaults = json.load(permission_file)
+
+    def _set_groups(self):
+        """
+        Purpose: Set account groups locally
+        Inputs: None
+        Runtime Errors if the api call fails
+
+        TODO: Store groups and only pull groups if group dose not exist
+        """ 
+
+        if self._groups is None:
+            URL = f"https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups"
+            bearer_token = self._bearer_token()
+            self._headers['Authorization'] = f"Bearer {bearer_token}"
+
+            res = requests.get(URL, headers=self._headers)
+            groups = dict()
+            
+            if res:
+                for group in res.json()['items']:
+                    groups[group['name']]=group
+
+            else:
+                raise RuntimeError("Failed to fetch groups")
         
+            self._groups = groups
+
     def group_exists(self, name):
         exists = False
+        self._set_groups()
         
         if name in self._groups.keys():
             exists = True
         
         return exists
 
-    def get_group_info(self, group_id):
+    def get_group_permission(self, group_id):
         """
         Purpose: Get permissions for a group by using the Group ID
         Inputs:  group id
@@ -151,9 +158,9 @@ class DTAccount:
                     'permission': 'tenant-viewer'
                 }
 
-            
         Return: True/False based on output for deleting group permissions
         """
+
         self._set_groups()
         bearer_token = self._bearer_token('write')
         output = False
@@ -165,12 +172,12 @@ class DTAccount:
 
         url = f'https://api.dynatrace.com/iam/v1/accounts/{self._account_num}/groups/{groupinfo["group_id"]}/permissions'
         
-        
         params = {
             "scope": groupinfo['tenant'],
             "permission-name": groupinfo['permission'],
             "scope-type": "tenant"
         }
+
         headers = {
             'accept': '*/*',
             'Authorization': f'Bearer {bearer_token}'
@@ -254,7 +261,7 @@ class DTAccount:
         for name in group_names:
             if self.group_exists(name):
                 group_id = self._groups[name]['uuid']
-                permissions.append(self.get_group_info(group_id))
+                permissions.append(self.get_group_permission(group_id))
         
         if len(permissions) !=0:
             print("Obtaining Permissions Successful")
@@ -302,7 +309,7 @@ class DTAccount:
 
         if self.group_exists(group_name):    
             group_id = self._groups[group_name]['uuid']
-            permissions = self.get_group_info(group_id)['permissions']
+            permissions = self.get_group_permission(group_id)['permissions']
         
             if len(permissions) > 0:
                 print(f"Removing Permssions for {group_name}:")
