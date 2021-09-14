@@ -19,7 +19,23 @@ def set_permissions(account, group_name=None):
     if group_name == None:
         group_name = input("Enter a team name: ")
     
-    account.set_default_permissions(group_name)
+    res = account.set_default_permissions(group_name)
+    if res:
+        print(f"Permissions Set for {group_name}")
+    else:
+        print("An error Occurred!")
+
+def read_from_file(account, file_name=None):
+    if file_name == None:
+        for file in os.listdir():
+            print(file, end="\t")
+        print("\n")
+
+        file_name = input("Enter a Text File: ")
+    with open(f"{file_name}.txt", "r") as group_file:
+        for line in group_file:
+            team_name=group_file.readline().split("_")[1]
+            set_permissions(account,team_name)
 
 
 if __name__ == "__main__":
@@ -33,7 +49,7 @@ if __name__ == "__main__":
 
 
     while True:
-        commands={"set_perms": set_permissions, "get_perms": get_permissions}
+        commands={"set_perms": set_permissions, "get_perms": get_permissions, "read_file": read_from_file}
         print(f"Available Commands: {commands.keys()}, exit")
         command = input("Enter a command: ")
         if command == 'exit':

@@ -1,6 +1,6 @@
-import requests, json
+import requests, json, logging, os
 from requests.api import delete
-
+import datetime
 class DTAccount:
     _headers = {'accept': 'application/json', 'Authorization': ""}
     _permissions_file = "default_permissions.json"
@@ -11,6 +11,9 @@ class DTAccount:
         self._client_sec     = client_sec
         self._groups         = None
         self._defaults       = None
+        date=datetime.datetime.now().strftime("%m%d%Y_%H%M%S")
+        os.makedirs(os.path.dirname('./logs'), exist_ok=True)
+        logging.basicConfig(filename=f'./logs/permissions_{date}.log',level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 
     def __repr__(self):
         return f"DT Account: {self._account_num}"
@@ -64,7 +67,8 @@ class DTAccount:
             print("Obtaining Permission Sets: successful")
             permissions = res.json()
         else:
-            raise RuntimeError("Failed to fetch permissions")
+            logging.error("Failed to fetch valid permissions")
+            raise RuntimeError("Failed to fetch valid permissions")
 
         return permissions
 
@@ -84,6 +88,7 @@ class DTAccount:
             print("Obtaining Tenants: successful")
             tenants = res.json()
         else:
+            logging.error("Failed to delete permission")
             raise RuntimeError("Failed to fetch tenants")
  
         return tenants
@@ -115,6 +120,7 @@ class DTAccount:
                     groups[group['name']]=group
 
             else:
+                logging.error("Failed to fetch groups")
                 raise RuntimeError("Failed to fetch groups")
         
             self._groups = groups
@@ -143,6 +149,7 @@ class DTAccount:
         if res:
             permissions = res.json()
         else:
+            logging.error("Failed to fetch group permission")
             raise RuntimeError("Failed to fetch group permissions")
         
         return permissions
@@ -187,11 +194,12 @@ class DTAccount:
 
         if res:
             if silent != True:
-                print("Successfully deleted permission")
+                logging.info("Successfully deleted permission")
             output = True
         else:
             if silent != True:
-                print("Failed to delete permission")
+                logging.error("Failed to delete permission")
+                raise RuntimeError("Deleting Permissions Failed")
             
         return output
 
@@ -238,11 +246,12 @@ class DTAccount:
         res= requests.post(url, headers=headers, data=json.dumps(data))
         if res: 
             if silent != True:
-                print("Set Permissions: Successful")
+                logging.info("Set Permissions: Successful")
             output = True
         else:
             if silent != True:
-                print("Call failed!")
+                logging.error("Call failed!")
+                raise RuntimeError("Setting Permissions Failed")
         
         return output
             
@@ -264,7 +273,7 @@ class DTAccount:
                 permissions.append(self.get_group_permission(group_id))
         
         if len(permissions) !=0:
-            print("Obtaining Permissions Successful")
+            logging.info("Obtaining Permissions Successful")
             output = permissions
     
         return output
@@ -276,12 +285,12 @@ class DTAccount:
         self._set_groups()
         self._load_defaults()
         group_names = [f"Dynatrace_{group_name}_PowerUsers", f"Dynatrace_{group_name}_Users"]
-
+        output=True
         
         for tenant in self._defaults['tenants']:
             for name in group_names:
                 permissions = self._defaults[name.split('_')[-1]]['permissions']
-                print(f"Setting permissions for {name}:")
+                logging.info(f"Setting permissions for {name}:")
                 if self.group_exists(name):
                     group_info={
                         'group_id': self._groups[name]['uuid'],
@@ -291,10 +300,14 @@ class DTAccount:
                     }
                     res = self.set_group_permission(group_info, True)
                     if res: 
-                        print(f"\tSet {permissions} for tenant {tenant}")
+                        logging.info(f"\tSet {permissions} for tenant {tenant}")
+                    else:
+                        output=False
+                        logging.error(f"\tFailed to Set {permissions} for tenant {tenant}")
                 else:
                     print(f"Unknown Group: {name}")
                     raise RuntimeError("Encountered An Unknown Group!")
+        return output
 
     def clear_permissions(self, group_name, user_type):
         """
@@ -312,14 +325,15 @@ class DTAccount:
             permissions = self.get_group_permission(group_id)['permissions']
         
             if len(permissions) > 0:
-                print(f"Removing Permssions for {group_name}:")
+                logging.info(f"Removing Permssions for {group_name}:")
                 for permission in permissions:
                     res = self.delete_group_permission({'group_id': group_id, 'tenant': permission['scope'], 'permission':permission['permissionName']}, True)
                     if res:
-                        print(f"\tSUCCESSFUL: {permission['permissionName']} removed for tenant: {permission['scope']}")
+                        logging.info(f"\tSUCCESSFUL: {permission['permissionName']} removed for tenant: {permission['scope']}")
                     else: 
-                        print(f"\tFAILED: {permission['permissionName']} could not be removed for tenant: {permission['scope']}")       
+                        logging.error(f"\tFAILED: {permission['permissionName']} could not be removed for tenant: {permission['scope']}")       
             else:
                 print("Nothing To Remove")
         else: 
             print("Group Does Not Exist")
+            logging.error("Group Does Not Exist")
