@@ -33,7 +33,7 @@ def read_from_file(account, file_name=None):
 
         file_name = input("Enter a Text File: ")
     with open(f"{file_name}.txt", "r") as group_file:
-        for line in group_file:
+        for _ in group_file:
             team_name=group_file.readline().split("_")[1]
             set_permissions(account,team_name)
 
