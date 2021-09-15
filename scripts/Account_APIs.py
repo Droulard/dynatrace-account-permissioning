@@ -146,7 +146,7 @@ class DTAccount:
         
         return exists
 
-    def get_group_permission(self, group_id):
+    def _get_group_permission(self, group_id):
         """
         Purpose: Get permissions for a group by using the Group ID
         Inputs:  group id
@@ -162,11 +162,12 @@ class DTAccount:
             permissions = res.json()
         else:
             logging.error("Failed to fetch group permission")
+            logging.error(res.json())
             raise RuntimeError("Failed to fetch group permissions")
         
         return permissions
 
-    def delete_group_permission(self, groupinfo, silent=False):
+    def _delete_group_permission(self, groupinfo):
         """
         Purpose: Used for deleting a permission for a specific tenant for a specific group
         Input:  Dictionary with the following keys: 'group_id', 'tenant', 'permission', Boolean value to run function in silence
@@ -205,17 +206,15 @@ class DTAccount:
         res = requests.delete(url=url, params=params, headers=headers)
 
         if res:
-            if silent != True:
-                logging.info("Successfully deleted permission")
+            logging.info("Successfully deleted permission")
             output = True
         else:
-            if silent != True:
-                logging.error("Failed to delete permission")
-                raise RuntimeError("Deleting Permissions Failed")
+            logging.error("Failed to delete permission")
+            raise RuntimeError("Deleting Permissions Failed")
             
         return output
 
-    def set_group_permission(self, groupinfo, silent=False):
+    def _set_group_permission(self, groupinfo, ):
         """
         Purpose: Set the permissions for a given group and tenant
         Inputs:  Dictionary containing the following:
@@ -257,13 +256,11 @@ class DTAccount:
         
         res= requests.post(url, headers=headers, data=json.dumps(data))
         if res: 
-            if silent != True:
-                logging.info("Set Permissions: Successful")
+            logging.info("Set Permissions: Successful")
             output = True
         else:
-            if silent != True:
-                logging.error("Call failed!")
-                raise RuntimeError("Setting Permissions Failed")
+            logging.error("Call failed!")
+            raise RuntimeError("Setting Permissions Failed")
         
         return output
             
@@ -282,8 +279,10 @@ class DTAccount:
         for name in group_names:
             if self.group_exists(name):
                 group_id = self._groups[name]['uuid']
-                permissions.append(self.get_group_permission(group_id))
-        
+                permissions.append(self._get_group_permission(group_id))
+            else:
+                logging.error("Tried fetching non existant group")
+                raise NameError("Group does not exist")
         if len(permissions) !=0:
             logging.info("Obtaining Permissions Successful")
             output = permissions
@@ -312,14 +311,14 @@ class DTAccount:
                         'permissions': permissions
 
                     }
-                    res = self.set_group_permission(group_info, True)
+                    res = self._set_group_permission(group_info)
                     if res: 
                         logging.info(f"\tSet {permissions} for tenant {tenant}")
                     else:
                         output=False
                         logging.error(f"\tFailed to Set {permissions} for tenant {tenant}")
                 else:
-                    print(f"Unknown Group: {name}")
+                    logging.error(f"Unknown Group: {name}")
                     raise RuntimeError("Encountered An Unknown Group!")
         return output
 
@@ -332,25 +331,32 @@ class DTAccount:
 
         self._set_groups()
         self._load_defaults()
+        output=True
+
         if user_type in ["PowerUsers", "Users"]:
             group_name = f"Dynatrace_{group_name}_{user_type}"
         else:
-            raise KeyError("Incorrect User Type")
+            logging.error("Required Paramaters group_name, user_type not provided")
+            raise NameError("Incorrect User Type")
 
         if self.group_exists(group_name):    
             group_id = self._groups[group_name]['uuid']
-            permissions = self.get_group_permission(group_id)['permissions']
+            permissions = self._get_group_permission(group_id)['permissions']
         
             if len(permissions) > 0:
                 logging.info(f"Removing Permssions for {group_name}:")
                 for permission in permissions:
-                    res = self.delete_group_permission({'group_id': group_id, 'tenant': permission['scope'], 'permission':permission['permissionName']}, True)
+                    res = self._delete_group_permission({'group_id': group_id, 'tenant': permission['scope'], 'permission':permission['permissionName']})
                     if res:
                         logging.info(f"\tSUCCESSFUL: {permission['permissionName']} removed for tenant: {permission['scope']}")
                     else: 
-                        logging.error(f"\tFAILED: {permission['permissionName']} could not be removed for tenant: {permission['scope']}")       
+                        logging.error(f"\tFAILED: {permission['permissionName']} could not be removed for tenant: {permission['scope']}")
+                        print("SOMETHING WENT WRONG")   
+                        output=False    
             else:
-                print("Nothing To Remove")
+                logging.error(f"Group {group_name} does not have any permissions")
+                raise EOFError("No permissions exist for this group")
         else: 
-            print("Group Does Not Exist")
             logging.error("Group Does Not Exist")
+        
+        return output
