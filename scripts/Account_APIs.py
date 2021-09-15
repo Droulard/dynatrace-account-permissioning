@@ -1,6 +1,6 @@
 import requests, json, logging, os
-from requests.api import delete
 import datetime
+
 class DTAccount:
     _headers = {'accept': 'application/json', 'Authorization': ""}
     _permissions_file = "default_permissions.json"
@@ -11,8 +11,13 @@ class DTAccount:
         self._client_sec     = client_sec
         self._groups         = None
         self._defaults       = None
+
+
         date=datetime.datetime.now().strftime("%m%d%Y_%H%M%S")
-        os.makedirs(os.path.dirname('./logs'), exist_ok=True)
+        
+        if not os.path.exists("./logs"):
+            os.makedirs("./logs")
+        
         logging.basicConfig(filename=f'./logs/permissions_{date}.log',level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 
     def __repr__(self):
@@ -77,7 +82,6 @@ class DTAccount:
         Purpose: Get valid tenants for a Dynatrace Account
         Inputs:  None
         Return:  Valid tenant set and management zones for the tenant
-        TODO:    Separate tenants and management zones, method should only return valid tenants
         """ 
         url = f"https://api.dynatrace.com/env/v1/accounts/{self._account_num}/environments"
         bearer_token = self._bearer_token()
@@ -94,6 +98,11 @@ class DTAccount:
         return tenants
 
     def _load_defaults(self):
+        """
+        Purpose: Get the permissions and tenants from the default permissions file
+        Inputs:  None
+        Return:  Valid Permission Set
+        """ 
         if self._defaults == None:
             with open (self._permissions_file) as permission_file:
                 self._defaults = json.load(permission_file)
@@ -103,8 +112,6 @@ class DTAccount:
         Purpose: Set account groups locally
         Inputs: None
         Runtime Errors if the api call fails
-
-        TODO: Store groups and only pull groups if group dose not exist
         """ 
 
         if self._groups is None:
@@ -126,6 +133,11 @@ class DTAccount:
             self._groups = groups
 
     def group_exists(self, name):
+        """
+        Purpose: Check if a group exists within the local dictionary of users
+        Inputs:  Team Name
+        Return:  True/False
+        """ 
         exists = False
         self._set_groups()
         
@@ -280,8 +292,10 @@ class DTAccount:
 
     def set_default_permissions(self, group_name):
         """
-        TODO: document this feature
-        """
+        Purpose: Set default permissions for both the Power User and Base User groups of a given group
+        Inputs:  Group Name
+        Return:  True/False based on if a group's permissions were set successfully
+        """ 
         self._set_groups()
         self._load_defaults()
         group_names = [f"Dynatrace_{group_name}_PowerUsers", f"Dynatrace_{group_name}_Users"]
@@ -311,8 +325,11 @@ class DTAccount:
 
     def clear_permissions(self, group_name, user_type):
         """
-        TODO: document this feature
-        """
+        Purpose: Set clear all permissions assigned to a given group
+        Inputs:  Group Name
+        Return:  True/False based on if a group's permissions were removed successfully
+        """ 
+
         self._set_groups()
         self._load_defaults()
         if user_type in ["PowerUsers", "Users"]:
