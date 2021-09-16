@@ -200,7 +200,7 @@ class DTAccount:
             
         return output
 
-    def _set_group_permission(self, groupinfo, ):
+    def _set_group_permission(self, groupinfo):
         """
         Purpose: Set the permissions for a given group and tenant
         Inputs:  Dictionary containing the following:
