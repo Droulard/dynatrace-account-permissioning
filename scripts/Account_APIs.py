@@ -125,26 +125,12 @@ class DTAccount:
             if res:
                 for group in res.json()['items']:
                     groups[group['name']]=group
-
+                logging.info("Set Groups Locally")
             else:
                 logging.error("Failed to fetch groups")
                 raise RuntimeError("Failed to fetch groups")
         
             self._groups = groups
-
-    def group_exists(self, name):
-        """
-        Purpose: Check if a group exists within the local dictionary of users
-        Inputs:  Team Name
-        Return:  True/False
-        """ 
-        exists = False
-        self._set_groups()
-        
-        if name in self._groups.keys():
-            exists = True
-        
-        return exists
 
     def _get_group_permission(self, group_id):
         """
@@ -264,6 +250,23 @@ class DTAccount:
         
         return output
             
+
+    def group_exists(self, team_name):
+        """
+        Purpose: Check if a group exists within the local dictionary of users
+        Inputs:  Team Name
+        Return:  True/False
+        """ 
+        exists = False
+        self._set_groups()
+        
+        for name in self._groups.keys():
+            if team_name in name:
+                exists = True
+        
+        return exists
+
+   
     def get_permissions(self, group_name):
         """
         Purpose: Get permissions set for both the Power User and Base User groups of a given group

@@ -25,6 +25,18 @@ def set_permissions(account, group_name=None):
     else:
         print("An error Occurred!")
 
+
+def verify_group(account, group_name=None):
+    if group_name == None:
+        group_name = input("Enter a team name: ")
+    
+    res = account.group_exists(group_name)
+    
+    if res:
+        print(f"{group_name} exists")
+    else:
+        print(f"{group_name} is unknown!")
+
 def read_from_file(account, file_name=None):
     if file_name == None:
         for file in os.listdir():
@@ -49,7 +61,12 @@ if __name__ == "__main__":
 
 
     while True:
-        commands={"set_perms": set_permissions, "get_perms": get_permissions, "read_file": read_from_file}
+        commands={
+            "set_perms": set_permissions, 
+            "get_perms": get_permissions, 
+            "read_file": read_from_file, 
+            "verify": verify_group
+            }
         print(f"Available Commands: {commands.keys()}, exit")
         command = input("Enter a command: ")
         if command == 'exit':

@@ -22,6 +22,17 @@ async def get_permissions(team_name):
         raise HTTPException(status_code=404, detail=f"Failed: {exception}")
     return output
 
+
+@app.get("/verify/{team_name}")
+async def verify_group(team_name):
+    output ={}
+    try:
+        group_exists = my_account.group_exists(team_name)
+        output={'message': group_exists}
+    except Exception as exception:
+        raise HTTPException(status_code=404, detail=f"Failed: {exception}")
+    return output
+
 @app.post("/permissions/{team_name}")
 async def set_permissions(team_name):
     output={}
