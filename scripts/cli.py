@@ -1,6 +1,6 @@
 import os, json 
 from dotenv import load_dotenv
-from Account_APIs import DTAccount
+from Account_APIs import dt_account
 
 def get_permissions(account, group_name=None):
     if group_name == None:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     account_num = os.getenv("account_num")
     client_id= os.getenv("client_id")
     client_secret= os.getenv("client_secret")
-    my_account = DTAccount(account_num, client_id, client_secret)
+    my_account = dt_account(account_num, client_id, client_secret)
     print(my_account)
 
 

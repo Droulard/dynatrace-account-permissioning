@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi.exceptions import HTTPException
-from Account_APIs import DTAccount
+from Account_APIs import dt_account
 import uvicorn, os
 load_dotenv()
 account_num = os.getenv("account_num")
 client_id= os.getenv("client_id")
 client_secret= os.getenv("client_secret")
-my_account = DTAccount(account_num, client_id, client_secret)
+my_account = dt_account(account_num, client_id, client_secret)
 
 
 app = FastAPI()

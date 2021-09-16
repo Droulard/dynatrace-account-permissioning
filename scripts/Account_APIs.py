@@ -1,7 +1,7 @@
 import requests, json, logging, os
 import datetime
 
-class DTAccount:
+class dt_account:
     _headers = {'accept': 'application/json', 'Authorization': ""}
     _permissions_file = "default_permissions.json"
 
