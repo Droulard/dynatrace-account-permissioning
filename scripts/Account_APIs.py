@@ -57,46 +57,6 @@ class DTAccount:
         
         return bearer_token
 
-    def _getvalid_permissions(self):
-        """
-        Purpose: Get valid permissions for a Dynatrace Account
-        Inputs:  None
-        Return:  Valid Permission Set
-        """ 
-        url="https://api.dynatrace.com/ref/v1/account/permissions"
-        bearer_token = self._bearer_token()
-        self._headers['Authorization'] = f"Bearer {bearer_token}"
-        res = requests.get(url, headers=self._headers)
-        
-        if res:
-            print("Obtaining Permission Sets: successful")
-            permissions = res.json()
-        else:
-            logging.error("Failed to fetch valid permissions")
-            raise RuntimeError("Failed to fetch valid permissions")
-
-        return permissions
-
-    def _get_tenants(self):
-        """
-        Purpose: Get valid tenants for a Dynatrace Account
-        Inputs:  None
-        Return:  Valid tenant set and management zones for the tenant
-        """ 
-        url = f"https://api.dynatrace.com/env/v1/accounts/{self._account_num}/environments"
-        bearer_token = self._bearer_token()
-        self._headers['Authorization'] = f"Bearer {bearer_token}"
-        res = requests.get(url, headers=self._headers)
-        
-        if res:
-            print("Obtaining Tenants: successful")
-            tenants = res.json()
-        else:
-            logging.error("Failed to delete permission")
-            raise RuntimeError("Failed to fetch tenants")
- 
-        return tenants
-
     def _load_defaults(self):
         """
         Purpose: Get the permissions and tenants from the default permissions file
@@ -200,7 +160,7 @@ class DTAccount:
             
         return output
 
-    def _set_group_permission(self, groupinfo, ):
+    def _set_group_permission(self, groupinfo):
         """
         Purpose: Set the permissions for a given group and tenant
         Inputs:  Dictionary containing the following:
