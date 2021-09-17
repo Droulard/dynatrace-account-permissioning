@@ -1,5 +1,14 @@
 # DT-Account-Permissioning
-A python module for managing user access to Dynatrace
+![Quality gate](./image/quality_gate.png?raw=true)
+
+
+## About The Project
+<i>"A python module for managing user access to Dynatrace."</i>
+
+
+The overall goal of this project is to provide automation around DT Permissions so that when a team is added to Dynatrace, permissions can be set automatically based on the group type and the Dynatrace tenants a user should have access to. 
+
+### Note: The project makes use of the concept of Power Users and Base Users which each have a different default set of permissions
 
 ## Requires:
 + Dynatrace Account
@@ -8,20 +17,10 @@ A python module for managing user access to Dynatrace
     + Account Number
     + Client ID
     + Client Secret 
-
-## About The Project
-The overall goal of this project is to provide automation around DT Permissioning so that when a team is added to Dynatrace permissions can be set automatically based on default permissions for a group type and the Dynatrace tenants a user should have access to. 
++ A default permission file for listing the permissions that should be granted to Power Users and Base Users and the tenants that users should have access to.
 
 ## Capabilities: 
++ Check if a group exists
 + Obtain permissions given to a specific teams Power Users and Base Users 
-
-## TODO: 
-+ The following needs to be added: 
-    + Resource: JSON structure for hosting valid tenants, valid permissions, default permissions for Base and Power User Groups
-    + Feature: Set user group permissions, based on group type, the default permissions for a user group and list of tenants that a user should have access to.
-    + Feature: Verify user group permissions
-    + Feature: Allow users to verify if a group exists in dynatrace 
-    + Task: Research and Develop features for Settings 2.0
-+ The following should/could be added: 
-    + Interface: fastAPI or otherwise
-    + Mongo Database for storing information regarding valid tenants, valid permissions and default permission for both Dynatrace User Groups
++ Add default permissions to a given team's PowerUsers and Base Users 
++ Clear permissions for a group
