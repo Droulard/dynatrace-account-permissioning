@@ -1,9 +1,0 @@
-2021-09-15 22:28:46,514 :: INFO :: Started server process [29657]
-2021-09-15 22:28:46,515 :: INFO :: Waiting for application startup.
-2021-09-15 22:28:46,516 :: INFO :: Application startup complete.
-2021-09-15 22:28:46,518 :: INFO :: Uvicorn running on http://localhost:5000 (Press CTRL+C to quit)
-2021-09-15 22:31:51,455 :: INFO :: Set Groups Locally
-2021-09-15 22:32:36,275 :: INFO :: Shutting down
-2021-09-15 22:32:36,376 :: INFO :: Waiting for application shutdown.
-2021-09-15 22:32:36,376 :: INFO :: Application shutdown complete.
-2021-09-15 22:32:36,377 :: INFO :: Finished server process [29657]
